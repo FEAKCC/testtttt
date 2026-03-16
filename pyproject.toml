@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recon-secretscanner"
+version = "0.1.0"
+description = "Async high-performance secret discovery scanner for web assets and source code"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+full = [
+  "httpx[http2]>=0.27.0",
+  "scikit-learn>=1.3.0",
+]
+
+[project.scripts]
+recon-secretscanner = "secret_scanner.cli:main"
