@@ -42,3 +42,6 @@ Tu peux changer avec:
 ```bash
 python -m secret_scanner.cli --url-file targets.txt --schemes https
 ```
+
+
+Notes: les entrées invalides (ex: `.` ou labels DNS vides) sont ignorées automatiquement au lieu de faire planter le scan.

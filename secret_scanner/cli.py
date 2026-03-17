@@ -28,10 +28,18 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _clean_target(value: str) -> str:
+    # Tolerate UTF-8 BOM and common copy/paste punctuation.
+    cleaned = value.strip().lstrip("\ufeff").strip("'\"` ")
+    if cleaned.startswith("."):
+        cleaned = cleaned.lstrip(".")
+    return cleaned
+
+
 def _read_url_lines(path: str) -> list[str]:
     lines = []
     for line in Path(path).read_text(encoding="utf-8", errors="ignore").splitlines():
-        candidate = line.strip()
+        candidate = _clean_target(line)
         if not candidate or candidate.startswith("#"):
             continue
         lines.append(candidate)
@@ -39,24 +47,25 @@ def _read_url_lines(path: str) -> list[str]:
 
 
 def _expand_target(target: str, schemes: list[str]) -> list[str]:
+    target = _clean_target(target)
+    if not target:
+        return []
     if SCHEME_RE.match(target):
         return [target]
     if target.startswith("//"):
         target = target[2:]
-    if "/" in target:
-        return [f"{scheme}://{target}" for scheme in schemes]
     return [f"{scheme}://{target}" for scheme in schemes]
 
 
 def load_urls(args: argparse.Namespace) -> list[str]:
     schemes = [s.strip().lower() for s in args.schemes.split(",") if s.strip()]
-    raw_targets = list(args.url)
+    raw_targets = [_clean_target(t) for t in args.url]
     if args.url_file:
         raw_targets.extend(_read_url_lines(args.url_file))
 
     expanded = []
     for target in raw_targets:
-        expanded.extend(_expand_target(target.strip(), schemes))
+        expanded.extend(_expand_target(target, schemes))
 
     # preserve order while deduplicating
     return list(dict.fromkeys(expanded))

@@ -76,16 +76,28 @@ class AsyncFetcher:
         if self.client is not None:
             await self.client.aclose()
 
+    @staticmethod
+    def _host_looks_valid(host: str) -> bool:
+        host = host.strip().strip(".")
+        if not host:
+            return False
+        # Avoid empty labels such as "..example.com" or "."
+        return all(label for label in host.split("."))
+
     async def resolve_hosts(self, urls: Iterable[str]) -> list[str]:
         out = []
+        loop = asyncio.get_running_loop()
         for url in urls:
-            host = urlparse(url).hostname
-            if not host:
+            try:
+                host = (urlparse(url).hostname or "").strip()
+            except ValueError:
+                continue
+            if not host or not self._host_looks_valid(host):
                 continue
             try:
-                await asyncio.get_running_loop().getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
+                await loop.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
                 out.append(url)
-            except socket.gaierror:
+            except (socket.gaierror, UnicodeError, ValueError, OSError):
                 continue
         return out
 
